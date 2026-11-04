@@ -1,0 +1,58 @@
+# Runs on every push to main. Tests first; the image is published only if they
+# pass, so a green package on GHCR means the tests were green for that commit.
+#
+# You should not need to edit this file. If you do, keep two things: the tests
+# must run before the build, and COMMIT must keep receiving github.sha.
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-go@v5
+        with:
+          go-version: '1.27'
+      - name: Vet
+        run: go vet ./...
+      - name: Test with coverage
+        run: |
+          mkdir -p coverage
+          go test ./... -race -coverprofile=coverage/coverage.out
+      - name: Coverage summary
+        run: go tool cover -func=coverage/coverage.out
+      - uses: actions/upload-artifact@v4
+        with:
+          name: coverage
+          path: coverage/
+          if-no-files-found: warn
+
+  build:
+    # Only after the tests pass.
+    needs: test
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+    steps:
+      - uses: actions/checkout@v4
+      - uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+      - uses: docker/build-push-action@v6
+        with:
+          context: .
+          push: true
+          tags: ghcr.io/${{ github.repository }}:latest
+          # This is what lets the marking script prove the image was built from
+          # the commit you submitted. Do not remove it.
+          build-args: |
+            COMMIT=${{ github.sha }}
+            BUILT_AT=${{ github.event.repository.updated_at }}

@@ -1,0 +1,11 @@
+{
+  "template": "atad-2026-2027-v1-go",
+  "name": "Calugar Miruna",
+  "group": "[group]",
+  "student_id": "M374801",
+  "email": "miruna.calugar@student.upt.ro",
+  "project": 1,
+  "project_title": "URL Shortener with Analytics",
+  "language": "go",
+  "run_command": "docker run --rm -p 8080:8080 ghcr.io/mirunacalugar/atad-project:latest"
+}

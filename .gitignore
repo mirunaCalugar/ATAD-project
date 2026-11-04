@@ -1,0 +1,10 @@
+# Build artefacts. The repository holds sources, not results.
+/app
+/server
+*.exe
+coverage/
+
+# Secrets. Never commit credentials.
+.env
+*.pem
+*.key
