@@ -35,7 +35,8 @@ CREATE TABLE IF NOT EXISTS links (
 ```
 
 - On startup: `PRAGMA journal_mode=WAL`, `PRAGMA busy_timeout=5000`, `Ping`.
-- The database path comes from the env var `DB_PATH`, default `/data/links.db`.
+- The database path comes from the env var `DB_PATH`, default `links.db`. The Dockerfile sets `/data/links.db`.
+- The port comes from the env var `PORT`, default `8080`.
 - `Create(code, url)`: one `INSERT`. A UNIQUE violation → `ErrCodeTaken`.
 - `Visit(code)`: one atomic statement:
   `UPDATE links SET visits = visits + 1, last_visit_at = ? WHERE code = ? RETURNING url`.
