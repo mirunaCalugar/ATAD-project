@@ -1,9 +1,11 @@
 package api
 
 import (
+	_ "embed"
 	"encoding/json"
 	"errors"
 	"fmt"
+	"html/template"
 	"log/slog"
 	"net/http"
 	"time"
@@ -15,12 +17,10 @@ import (
 
 const maxBodyBytes = 1 << 20
 
-const identityPage = `<!doctype html><html lang="en"><meta charset="utf-8">
-<title>%[1]s</title><body>
-<h1>%[1]s</h1>
-<p>Calugar Miruna, group [group]</p>
-<p>Project 1: URL Shortener with Analytics</p>
-</body></html>`
+//go:embed web/index.html
+var indexHTML string
+
+var indexPage = template.Must(template.New("index").Parse(indexHTML))
 
 type server struct {
 	store   *store.Store
@@ -77,7 +77,9 @@ func (s *server) version(w http.ResponseWriter, r *http.Request) {
 
 func (s *server) identity(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "text/html; charset=utf-8")
-	fmt.Fprintf(w, identityPage, version.Current().App)
+	if err := indexPage.Execute(w, version.Current()); err != nil {
+		s.log.Error("render index", "err", err)
+	}
 }
 
 func (s *server) reset(w http.ResponseWriter, r *http.Request) {
