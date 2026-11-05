@@ -3,8 +3,8 @@
 [One paragraph: what this program does and who would use it. Replace this
 whole file — it is your project's front door, and it is marked.]
 
-- **Student:** [Surname Firstname], group [group]
-- **Project:** [number and title from the project description]
+- **Student:** Calugar Miruna, group DMWD
+- **Project:** 1 — URL Shortener with Analytics
 - **Language:** Go
 
 ## What it does

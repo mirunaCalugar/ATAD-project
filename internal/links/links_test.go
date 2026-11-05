@@ -47,7 +47,7 @@ func TestValidateCode(t *testing.T) {
 		{"too long", "abcdefghijk", true},
 		{"space", "ab cd", true},
 		{"slash", "ab/cd", true},
-		{"non ascii", "ăbcd", true},
+		{"non ascii", "ébcd", true},
 		{"reserved links", "links", true},
 		{"reserved health", "health", true},
 		{"reserved version", "version", true},
