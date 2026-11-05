@@ -20,9 +20,3 @@ func TestVersionReportsContractFields(t *testing.T) {
 		}
 	}
 }
-
-// Replace this with tests for your own logic. Aim for the behaviour that would
-// break silently, not for the lines that are easy to reach.
-func TestYourLogic(t *testing.T) {
-	t.Skip("write your own tests here")
-}
