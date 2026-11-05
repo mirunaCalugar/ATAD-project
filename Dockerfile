@@ -33,16 +33,19 @@ RUN CGO_ENABLED=0 go build \
 # ---- stage 2: run -----------------------------------------------------------
 FROM alpine:3.21
 
-LABEL org.opencontainers.image.title="ATAD project" \
-      org.opencontainers.image.authors="Surname Firstname <firstname.surname@student.upt.ro>" \
-      org.opencontainers.image.source="https://github.com/user/repo"
+LABEL org.opencontainers.image.title="URL Shortener with Analytics" \
+      org.opencontainers.image.authors="Calugar Miruna <miruna.calugar@student.upt.ro>" \
+      org.opencontainers.image.source="https://github.com/mirunaCalugar/ATAD-project"
 
 # Run as an unprivileged user. A container process that does not need root
 # should not have it.
-RUN adduser -D -u 10001 app
+RUN adduser -D -u 10001 app && mkdir /data && chown app /data
 
 COPY --from=build /app /usr/local/bin/app
 USER app
+
+ENV DB_PATH=/data/links.db
+VOLUME /data
 
 # Every project is a service on 8080; the contract requires this line.
 EXPOSE 8080
