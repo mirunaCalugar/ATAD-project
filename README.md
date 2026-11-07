@@ -1,7 +1,8 @@
-# [Project title]
+# URL Shortener with Analytics
 
-[One paragraph: what this program does and who would use it. Replace this
-whole file — it is your project's front door, and it is marked.]
+A web service that turns a long URL into a short code, redirects visitors of
+that code to the original address, and counts each visit. It is for anyone who
+wants short, shareable links and a simple view of how often each one is used.
 
 - **Student:** Calugar Miruna, group DMWD
 - **Project:** 1 — URL Shortener with Analytics
@@ -9,14 +10,34 @@ whole file — it is your project's front door, and it is marked.]
 
 ## What it does
 
-[Two or three paragraphs. What problem it solves, what it does not do, and
-what state it is in.]
+`POST /links` accepts an `http` or `https` URL and returns a short code. You can
+choose the code (4 to 10 characters from `A-Z a-z 0-9 - _`), or the service
+generates a random 7-character one. A visit to `/{code}` answers `302` with the
+original URL in the `Location` header and counts one visit.
+`GET /links/{code}/stats` reports the number of visits and the time of the last
+one. Reading the stats does not count as a visit.
+
+Links live in a SQLite database, so they survive a restart. Code uniqueness is
+enforced by the database, so two simultaneous requests for the same code create
+one link and get one `201` and one `409`. The visit is counted in the same
+statement that reads the URL, before the redirect is sent, so no visit is lost
+if the process stops.
+
+A web page on `/` lets you create, copy, open and delete links and watch the
+visit counts update. The service does not have user accounts, link expiry or
+per-visitor analytics. Design notes are in [docs/architecture.md](docs/architecture.md).
 
 ## How to run it
 
 ```
-docker run --rm -p 8080:8080 ghcr.io/[user]/[repo]:latest
+docker run --rm -p 8080:8080 -v atad-data:/data ghcr.io/mirunacalugar/atad-project:latest
 ```
+
+The `-v atad-data:/data` volume keeps the links when the container is removed.
+Without it, data survives a restart of the same container only.
+
+The image is built for `linux/amd64`. On an Apple Silicon Mac, add
+`--platform linux/amd64`.
 
 To build and run without Docker:
 
@@ -25,38 +46,54 @@ go run ./cmd/app
 go run ./cmd/app --version
 ```
 
+| Variable  | Default    | Meaning                     |
+|-----------|------------|-----------------------------|
+| `PORT`    | `8080`     | Port the service listens on |
+| `DB_PATH` | `links.db` | SQLite database file        |
+
+The Docker image sets `DB_PATH=/data/links.db`.
+
+To run the tests:
+
+```
+go test -race ./...
+```
+
 ## What you should see
 
-[What a successful run looks like. If it is a service, one request and its
-response. If it is a tool, one command and its output. A reader who has never
-seen your project must be able to tell whether it worked.]
+Open <http://localhost:8080/> for the web page, or use `curl`:
 
----
+```
+$ curl -i -H "Content-Type: application/json" \
+    -d '{"url":"https://go.dev/doc/effective_go","code":"gofmt"}' \
+    http://localhost:8080/links
+HTTP/1.1 201 Created
+Content-Type: application/json
 
-## Before you delete these notes
+{"id":1,"code":"gofmt","url":"https://go.dev/doc/effective_go","created_at":"2026-11-05T12:15:02.86151371Z"}
 
-**Fill in `atad.json` first.** Name, group, student id, email, project number
-and title, language, and the command that runs your project. The marking script reads this file. A field left as
-`[placeholder]` counts as missing.
+$ curl -i http://localhost:8080/gofmt
+HTTP/1.1 302 Found
+Location: https://go.dev/doc/effective_go
 
-**`--version` is part of the contract.** It must print one line of JSON with
-`app`, `version`, `commit` and `built_at`, and exit 0. The `commit` value is
-stamped into the binary by the Dockerfile from the SHA that CI supplies, which
-is how it is proved that the published image was built from the code you
-submitted. Do not print it yourself, and do not remove the test that checks it.
+$ curl http://localhost:8080/links/gofmt/stats
+{"code":"gofmt","visits":1,"last_visit_at":"2026-11-05T12:15:28.7703675Z"}
+```
 
-**The four contract routes are not optional.** `/health`, `/version`, `/` and
-`POST /reset` must answer exactly as the project document specifies, in every
-project. They are checked automatically, and a right answer with the wrong
-status code is a wrong answer.
+`visits` stays `1` however many times you read the stats.
 
-**Layout.** `cmd/app` is the entry point, `internal/` is your own packages,
-and `docs/` holds your documentation. Add packages under `internal/` as the
-project grows; a single 800-line `main.go` is not a design.
+## Routes
 
-**`docs/` has fixed names.** `docs/architecture.md` is due in week 7 and
-`docs/report.docx` at the end. `docs/README.md` explains both — read it, and do
-not edit or delete it.
+| Route                       | Method | Success                                       | Errors     |
+|-----------------------------|--------|-----------------------------------------------|------------|
+| `/health`                   | GET    | `200 {"status","uptime_seconds"}`             |            |
+| `/version`                  | GET    | `200 {"app","version","commit","built_at"}`   |            |
+| `/`                         | GET    | `200`, web page                               |            |
+| `/reset`                    | POST   | `204`, deletes all links                      |            |
+| `/links`                    | POST   | `201 {"id","code","url","created_at"}`        | `400`, `409` |
+| `/links`                    | GET    | `200`, all links, newest first                |            |
+| `/{code}`                   | GET    | `302` to the original URL                     | `404`      |
+| `/links/{code}/stats`       | GET    | `200 {"code","visits","last_visit_at"}`       | `404`      |
+| `/links/{code}`             | DELETE | `204`                                         | `404`      |
 
-**Do not commit** `coverage/`, build output, or anything with a credential in
-it. `.gitignore` already covers the usual cases.
+Errors have the shape `{"error":"<code>","message":"<explanation>"}`.
