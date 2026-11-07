@@ -7,7 +7,7 @@
 # ENTRYPOINT, which must still start your program.
 
 # ---- stage 1: compile -------------------------------------------------------
-FROM golang:1.27-alpine AS build
+FROM --platform=$BUILDPLATFORM golang:1.27-alpine AS build
 WORKDIR /src
 
 # Copy the module files first and download dependencies as their own layer.
@@ -20,11 +20,13 @@ COPY . .
 # COMMIT and BUILT_AT are supplied by the CI workflow; see .github/workflows/ci.yml.
 ARG COMMIT=dev
 ARG BUILT_AT=unknown
+ARG TARGETOS
+ARG TARGETARCH
 
 # CGO_ENABLED=0 produces a static binary that runs on Alpine with no extra
 # libraries. -s -w strip debug information and shrink the result.
 # -X sets a string variable at link time: this is how the build stamps itself.
-RUN CGO_ENABLED=0 go build \
+RUN CGO_ENABLED=0 GOOS=$TARGETOS GOARCH=$TARGETARCH go build \
       -ldflags="-s -w \
         -X atad-project/internal/version.Commit=${COMMIT} \
         -X atad-project/internal/version.BuiltAt=${BUILT_AT}" \
