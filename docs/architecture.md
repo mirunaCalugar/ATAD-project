@@ -68,6 +68,5 @@ atomic writes and no uniqueness constraint.
 ## What is not built yet
 
 - The in-memory `code → url` cache from the optimisation note above.
-- A multi-architecture image. CI publishes `linux/amd64` only.
 - Pagination for `GET /links`. It returns every link.
 - Rate limiting and authentication. Anyone can create or delete links.

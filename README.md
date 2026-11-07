@@ -36,8 +36,8 @@ docker run --rm -p 8080:8080 -v atad-data:/data ghcr.io/mirunacalugar/atad-proje
 The `-v atad-data:/data` volume keeps the links when the container is removed.
 Without it, data survives a restart of the same container only.
 
-The image is built for `linux/amd64`. On an Apple Silicon Mac, add
-`--platform linux/amd64`.
+The image is built for `linux/amd64` and `linux/arm64`, so it runs on Intel
+and Apple Silicon machines.
 
 To build and run without Docker:
 
